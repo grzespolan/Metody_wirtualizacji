@@ -1,0 +1,14 @@
+[
+    {
+        "id": 1,
+        "domain": "strona1.com",
+        "valid_until": "2026-12-01",
+        "status": "valid"
+    },
+    {
+        "id": 2,
+        "domain": "strona2.com",
+        "valid_until": "2026-11-15",
+        "status": "warning"
+    }
+]

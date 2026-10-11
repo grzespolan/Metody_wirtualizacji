@@ -1,15 +1,11 @@
 from fastapi import FastAPI
+import json
 
 app = FastAPI()
-
-przykladowa_lista = [
-    {"id": 1, "domain": "Adam_Malysz.pl",
-        "valid_until": "2026-12-01", "status": "valid"},
-    {"id": 2, "domain": "Robert_Maklowicz.com",
-        "valid_until": "2026-10-15", "status": "warning"}
-]
 
 
 @app.get("/certificates")
 async def get_certificates():
-    return przykladowa_lista
+    with open("db.json", "r", encoding="utf-8") as file:
+        data = json.load(file)
+        return data
