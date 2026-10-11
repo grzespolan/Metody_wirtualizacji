@@ -1,0 +1,20 @@
+services:
+  backend:
+    build: ./backend
+    ports: ["8000:8000"]
+    
+  frontend:
+    build: ./frontend
+    ports: ["8080:80"]
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=certuser
+      - POSTGRES_PASSWORD=certpass123
+      - POSTGRES_DB=certificates
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:
