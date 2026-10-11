@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Monitor Certyfikatów TLS</title>
+</head>
+
+<body>
+    <h1>Monitor Certyfikatów TLS</h1>
+    <p id="status">Ładowanie...</p>
+    <div id="wynik"></div>
+
+    <script>
+        fetch('/api/certificates')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('status').textContent =
+                    'Pobrano ' + data.length + ' certyfikat(ów)';
+                document.getElementById('wynik').textContent =
+                    JSON.stringify(data, null, 2);
+            })
+            .catch(error => {
+                document.getElementById('status').textContent =
+                    'Błąd: ' + error.message;
+            });
+    </script>
+</body>
+
+</html>
