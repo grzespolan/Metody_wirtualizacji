@@ -2,4 +2,4 @@
 
 # pomoc ai w zrozumieniu biblioteki fastapi oraz utworzeniu środowiska venv
 
-# pomoc ai w utworzeniu kontenera dla db
+# pomoc ai w utworzeniu plikow dockerfile i nginx.conf
