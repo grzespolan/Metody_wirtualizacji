@@ -97,3 +97,41 @@ def create_certificate2(cert_data: CertificateCreate):
             new_cert = cur.fetchone()
             conn.commit()
             return new_cert
+
+# usuwanie rekordu
+
+
+@app.delete("/certificates/{certificate_id}")
+def delete_certificate(certificate_id: int):
+    with get_db_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "DELETE FROM certificates WHERE id = %s RETURNING id;",
+                [certificate_id]
+            )
+            deleted = cur.fetchone()
+
+            if deleted is None:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Certyfikat o podanym ID nie istnieje"
+                )
+
+            conn.commit()
+            return {"message": f"Certyfikat o ID {certificate_id} został pomyślnie usunięty"}
+
+# endpoint healthchech
+
+
+@app.get("/health")
+def health_check():
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT 1;")
+        return {"status": "healthy", "database": "connected"}
+    except Exception as e:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Database connection failed: {str(e)}"
+        )
