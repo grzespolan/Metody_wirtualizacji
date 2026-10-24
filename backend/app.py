@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 import os
 import psycopg2
 from psycopg2.extras import RealDictConnection
@@ -41,10 +41,16 @@ def init_db():
             conn.commit()
 
 
-@app.get("/certificates")
-def get_certificates():
+@app.get("/certificates/{certificate_id}")
+def get_certificate(certificate_id: int):
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT id, domain, valid_until, status FROM certificates;")
-            return cur.fetchall()
+                "SELECT id, domain, valid_until, status FROM certificates WHERE id = %s;", [certificate_id])
+
+            cert = cur.fetchone()
+
+            if cert is None:
+                raise HTTPException(
+                    status_code=404, detail="Certyfikat o podanym ID nie istnieje")
+            return cert
