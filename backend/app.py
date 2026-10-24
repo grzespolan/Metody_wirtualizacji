@@ -1,10 +1,21 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, status
 import os
 import psycopg2
 from psycopg2.extras import RealDictConnection
 from psycopg2.extras import RealDictCursor
+from pydantic import BaseModel, Field
+from datetime import date
 
 app = FastAPI()
+
+
+class CertificateCreate(BaseModel):
+    domain: str = Field(min_length=3, max_length=255,
+                        examples=["mojadomena.pl"])
+    valid_until: date = Field(examples=["2026-12-31"])
+    status: str = Field(
+        pattern="^(valid|warning|expired)$", examples=["valid"])
+
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
@@ -40,6 +51,19 @@ def init_db():
                 """)
             conn.commit()
 
+# pobieranie listy
+
+
+@app.get("/certificates")
+def get_certificates():
+    with get_db_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, domain, valid_until, status FROM certificates;")
+            return cur.fetchall()
+
+# pobieranie pojedynczego rekordu
+
 
 @app.get("/certificates/{certificate_id}")
 def get_certificate(certificate_id: int):
@@ -54,3 +78,22 @@ def get_certificate(certificate_id: int):
                 raise HTTPException(
                     status_code=404, detail="Certyfikat o podanym ID nie istnieje")
             return cert
+
+# dodawanie nowego rekordu
+
+
+@app.post("/certificates", status_code=status.HTTP_201_CREATED)
+def create_certificate2(cert_data: CertificateCreate):
+    with get_db_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO certificates (domain, valid_until, status)
+                VALUES (%s, %s, %s)
+                RETURNING id, domain, valid_until, status;
+                """,
+                [cert_data.domain, cert_data.valid_until, cert_data.status]
+            )
+            new_cert = cur.fetchone()
+            conn.commit()
+            return new_cert
