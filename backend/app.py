@@ -21,6 +21,8 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         }
     )
 
+#Test: curl.exe -i -X POST http://localhost:8000/certificates -H "Content-Type: application/json" -d "{\"domain\": \"a\", \"valid_until\": \"2026-12-31\", \"status\": \"nieznany\"}"
+
 
 class CertificateCreate(BaseModel):
     domain: str = Field(min_length=3, max_length=255,
@@ -74,9 +76,10 @@ def get_certificates():
             cur.execute(
                 "SELECT id, domain, valid_until, status FROM certificates;")
             return cur.fetchall()
+#Test: curl.exe -i http://localhost:8000/certificates
+
 
 # pobieranie pojedynczego rekordu
-
 
 @app.get("/certificates/{certificate_id}")
 def get_certificate(certificate_id: int):
@@ -91,9 +94,11 @@ def get_certificate(certificate_id: int):
                 raise HTTPException(
                     status_code=404, detail="Certyfikat o podanym ID nie istnieje")
             return cert
+#Test: curl.exe -i http://localhost:8000/certificates/1
+#Test: curl.exe -i http://localhost:8000/certificates/999
+
 
 # dodawanie nowego rekordu
-
 
 @app.post("/certificates", status_code=status.HTTP_201_CREATED)
 def create_certificate(cert_data: CertificateCreate):
@@ -110,9 +115,10 @@ def create_certificate(cert_data: CertificateCreate):
             new_cert = cur.fetchone()
             conn.commit()
             return new_cert
+#Test: curl.exe -i -X POST http://localhost:8000/certificates -H "Content-Type: application/json" -d '{\"domain\": \"nowadomena.pl\", \"valid_until\": \"2027-06-30\", \"status\": \"valid\"}'
+#Test: curl.exe -i -X POST http://localhost:8000/certificates -H "Content-Type: application/json" -d '{\"domain\": \"a\", \"valid_until\": \"zla-data\", \"status\": \"nieznany\"}'
 
 # usuwanie rekordu
-
 
 @app.delete("/certificates/{certificate_id}")
 def delete_certificate(certificate_id: int):
@@ -132,9 +138,10 @@ def delete_certificate(certificate_id: int):
 
             conn.commit()
             return {"message": f"Certyfikat o ID {certificate_id} został pomyślnie usunięty"}
+#Test: curl.exe -i -X DELETE http://localhost:8000/certificates/1
+
 
 # endpoint healthchech
-
 
 @app.get("/health")
 def health_check():
@@ -148,3 +155,4 @@ def health_check():
             status_code=503,
             detail=f"Database connection failed: {str(e)}"
         )
+#Test: curl.exe -i http://localhost:8000/health
