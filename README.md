@@ -5,3 +5,5 @@
 # pomoc ai w napisaniu skryptu w js oraz zbudowania podstawy wizualnej strony w css
 
 # pomoc ai w polaczeniu backendu z baza (psycopg2.extras)
+
+#pomoc ai w generowaniu handlera walidacji

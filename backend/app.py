@@ -1,4 +1,6 @@
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, status, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 import os
 import psycopg2
 from psycopg2.extras import RealDictConnection
@@ -7,6 +9,17 @@ from pydantic import BaseModel, Field
 from datetime import date
 
 app = FastAPI()
+
+#obsluga bledu 400
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content={
+            "detail": "Błąd walidacji danych wejściowych",
+            "errors": exc.errors()
+        }
+    )
 
 
 class CertificateCreate(BaseModel):
@@ -83,7 +96,7 @@ def get_certificate(certificate_id: int):
 
 
 @app.post("/certificates", status_code=status.HTTP_201_CREATED)
-def create_certificate2(cert_data: CertificateCreate):
+def create_certificate(cert_data: CertificateCreate):
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(

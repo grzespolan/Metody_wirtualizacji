@@ -24,7 +24,7 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?brak pliku .env}
       - POSTGRES_DB=certificates
     healthcheck:
-      test: [ "CMD", "pg_isready", "-U", "certuser" ]
+      test: [ "CMD", "pg_isready", "-U", "certuser", "-d", "certificates" ]
       interval: 2s
     volumes:
       - db_data:/var/lib/postgresql/data
