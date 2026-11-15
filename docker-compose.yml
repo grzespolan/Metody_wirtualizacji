@@ -35,6 +35,7 @@ services:
       interval: 2s
     volumes:
       - db_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
 
 volumes:
   db_data:
