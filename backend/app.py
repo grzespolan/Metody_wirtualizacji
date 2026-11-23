@@ -29,7 +29,7 @@ class IssuerCreate(BaseModel):
 class CertificateCreate(BaseModel):
     domain: str = Field(min_length=3, max_length=255, examples=["mojadomena.pl"])
     valid_until: date = Field(examples=["2026-12-31"])
-    status: str = Field(pattern="^(valid|warning|expired)$", examples=["valid"])
+    status: str | None = Field(default=None, pattern="^(valid|warning|expired)$", examples=["valid"])
     issuer_id: int | None = Field(default=None, examples=[1])
 
 
@@ -41,6 +41,17 @@ DATABASE_URL = os.getenv(
 
 def get_db_connection():
     return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+
+
+def calculate_status(valid_until: date) -> str:
+    """Automatyczne wyliczanie statusu na podstawie daty wygaśnięcia."""
+    days_left = (valid_until - date.today()).days
+    if days_left < 0:
+        return "expired"
+    elif days_left < 7:
+        return "warning"
+    else:
+        return "valid"
 
 
 @app.on_event("startup")
@@ -88,9 +99,9 @@ def init_db():
             if cur.fetchone()["count"] == 0:
                 cur.execute("""
                     INSERT INTO certificates (domain, valid_until, status, issuer_id) VALUES
-                    ('example.com', '2026-12-31', 'valid', 1),
-                    ('test.local', '2026-11-15', 'warning', 2),
-                    ('expired.org', '2025-01-01', 'expired', 3);
+                    ('example.com', CURRENT_DATE + INTERVAL '180 days', 'valid', 1),
+                    ('test.local', CURRENT_DATE + INTERVAL '4 days', 'warning', 2),
+                    ('expired.org', CURRENT_DATE - INTERVAL '15 days', 'expired', 3);
                 """)
 
             conn.commit()
@@ -104,7 +115,6 @@ def get_issuers():
         with conn.cursor() as cur:
             cur.execute("SELECT id, name, website FROM issuers ORDER BY id;")
             return cur.fetchall()
-# Test: curl.exe -i http://localhost:8000/issuers
 
 
 @app.post("/issuers", status_code=status.HTTP_201_CREATED)
@@ -122,7 +132,6 @@ def create_issuer(issuer_data: IssuerCreate):
             new_issuer = cur.fetchone()
             conn.commit()
             return new_issuer
-# Test: curl.exe -i -X POST http://localhost:8000/issuers -H "Content-Type: application/json" -d '{\"name\": \"Cloudflare CA\", \"website\": \"https://cloudflare.com\"}'
 
 
 # --- Endpointy dla certyfikatów (certificates) ---
@@ -132,13 +141,23 @@ def get_certificates():
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             cur.execute("""
-                SELECT c.id, c.domain, c.valid_until, c.status, c.issuer_id, i.name AS issuer_name
+                SELECT 
+                    c.id, 
+                    c.domain, 
+                    c.valid_until, 
+                    CASE 
+                        WHEN c.valid_until < CURRENT_DATE THEN 'expired'
+                        WHEN (c.valid_until - CURRENT_DATE) < 7 THEN 'warning'
+                        ELSE 'valid'
+                    END AS status,
+                    (c.valid_until - CURRENT_DATE) AS days_left,
+                    c.issuer_id, 
+                    i.name AS issuer_name
                 FROM certificates c
                 LEFT JOIN issuers i ON c.issuer_id = i.id
                 ORDER BY c.id;
             """)
             return cur.fetchall()
-# Test: curl.exe -i http://localhost:8000/certificates
 
 
 @app.get("/certificates/{certificate_id}")
@@ -146,7 +165,18 @@ def get_certificate(certificate_id: int):
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             cur.execute("""
-                SELECT c.id, c.domain, c.valid_until, c.status, c.issuer_id, i.name AS issuer_name
+                SELECT 
+                    c.id, 
+                    c.domain, 
+                    c.valid_until, 
+                    CASE 
+                        WHEN c.valid_until < CURRENT_DATE THEN 'expired'
+                        WHEN (c.valid_until - CURRENT_DATE) < 7 THEN 'warning'
+                        ELSE 'valid'
+                    END AS status,
+                    (c.valid_until - CURRENT_DATE) AS days_left,
+                    c.issuer_id, 
+                    i.name AS issuer_name
                 FROM certificates c
                 LEFT JOIN issuers i ON c.issuer_id = i.id
                 WHERE c.id = %s;
@@ -158,11 +188,13 @@ def get_certificate(certificate_id: int):
                     status_code=404, detail="Certyfikat o podanym ID nie istnieje"
                 )
             return cert
-# Test: curl.exe -i http://localhost:8000/certificates/1
 
 
 @app.post("/certificates", status_code=status.HTTP_201_CREATED)
 def create_certificate(cert_data: CertificateCreate):
+    # Wyliczenie statusu automatycznie na podstawie daty
+    auto_status = cert_data.status or calculate_status(cert_data.valid_until)
+
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             try:
@@ -172,14 +204,25 @@ def create_certificate(cert_data: CertificateCreate):
                     VALUES (%s, %s, %s, %s)
                     RETURNING id, domain, valid_until, status, issuer_id;
                     """,
-                    [cert_data.domain, cert_data.valid_until, cert_data.status, cert_data.issuer_id]
+                    [cert_data.domain, cert_data.valid_until, auto_status, cert_data.issuer_id]
                 )
                 new_cert = cur.fetchone()
                 conn.commit()
 
-                # Pobranie rekordu wraz z nazwą wystawcy (JOIN)
+                # Pobranie rekordu wraz z relacją JOIN i wyliczonymi dniami
                 cur.execute("""
-                    SELECT c.id, c.domain, c.valid_until, c.status, c.issuer_id, i.name AS issuer_name
+                    SELECT 
+                        c.id, 
+                        c.domain, 
+                        c.valid_until, 
+                        CASE 
+                            WHEN c.valid_until < CURRENT_DATE THEN 'expired'
+                            WHEN (c.valid_until - CURRENT_DATE) < 7 THEN 'warning'
+                            ELSE 'valid'
+                        END AS status,
+                        (c.valid_until - CURRENT_DATE) AS days_left,
+                        c.issuer_id, 
+                        i.name AS issuer_name
                     FROM certificates c
                     LEFT JOIN issuers i ON c.issuer_id = i.id
                     WHERE c.id = %s;
@@ -196,7 +239,6 @@ def create_certificate(cert_data: CertificateCreate):
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=f"Błąd bazy danych: {str(e)}"
                 )
-# Test: curl.exe -i -X POST http://localhost:8000/certificates -H "Content-Type: application/json" -d '{\"domain\": \"nowadomena.pl\", \"valid_until\": \"2027-06-30\", \"status\": \"valid\", \"issuer_id\": 1}'
 
 
 @app.delete("/certificates/{certificate_id}")
@@ -217,7 +259,6 @@ def delete_certificate(certificate_id: int):
 
             conn.commit()
             return {"message": f"Certyfikat o ID {certificate_id} został pomyślnie usunięty"}
-# Test: curl.exe -i -X DELETE http://localhost:8000/certificates/1
 
 
 # --- Healthcheck ---
@@ -234,4 +275,3 @@ def health_check():
             status_code=503,
             detail=f"Database connection failed: {str(e)}"
         )
-# Test: curl.exe -i http://localhost:8000/health
