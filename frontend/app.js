@@ -42,13 +42,24 @@ function loadCertificates() {
 
             data.forEach(item => {
                 const tr = document.createElement('tr');
-                const badgeClass = item.status === 'valid' ? 'badge-valid' : (item.status === 'warning' ? 'badge-warning' : 'badge-expired');
+                let badgeClass = 'badge-valid';
+                let statusText = `Ważny`;
+
+                if (item.status === 'warning') {
+                    badgeClass = 'badge-warning';
+                    statusText = 'Wkrótce wygasa';
+                } else if (item.status === 'expired') {
+                    badgeClass = 'badge-expired';
+                    const daysAgo = Math.abs(item.days_left);
+                    statusText = `Wygasł`;
+                }
+
                 tr.innerHTML = `
                     <td>${item.id}</td>
                     <td><strong>${item.domain}</strong></td>
                     <td>${item.issuer_name || '<em style="color:#64748b;">Brak</em>'}</td>
                     <td>${item.valid_until}</td>
-                    <td><span class="badge ${badgeClass}">${item.status}</span></td>
+                    <td><span class="badge ${badgeClass}">${statusText}</span></td>
                     <td>
                         <button class="btn-delete" onclick="handleDeleteCertificate(${item.id})">Usuń</button>
                     </td>
@@ -100,11 +111,11 @@ function loadIssuersDropdown() {
             data.forEach(iss => {
                 const opt = document.createElement('option');
                 opt.value = iss.id;
-                opt.textContent = `${iss.name} (ID: ${iss.id})`;
+                opt.textContent = `${iss.name}`;
                 select.appendChild(opt);
             });
         })
-        .catch(() => {});
+        .catch(() => { });
 }
 
 // --- DODAWANIE CERTYFIKATU (POST /api/certificates) ---
@@ -113,12 +124,11 @@ function handleAddCertificate(event) {
     const domain = document.getElementById('certDomain').value.trim();
     const issuerIdVal = document.getElementById('certIssuer').value;
     const validUntil = document.getElementById('certValidUntil').value;
-    const status = document.getElementById('certStatus').value;
 
+    // Ważność (status) jest wyliczana automatycznie w backendzie na podstawie daty!
     const payload = {
         domain: domain,
         valid_until: validUntil,
-        status: status,
         issuer_id: issuerIdVal ? parseInt(issuerIdVal, 10) : null
     };
 
@@ -127,19 +137,19 @@ function handleAddCertificate(event) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
     })
-    .then(async res => {
-        const data = await res.json();
-        if (!res.ok) {
-            throw new Error(data.detail || 'Błąd zapisu certyfikatu');
-        }
-        return data;
-    })
-    .then(() => {
-        setStatus('Pomyślnie dodano nowy certyfikat!');
-        document.getElementById('addCertForm').reset();
-        loadCertificates();
-    })
-    .catch(err => setStatus('Błąd: ' + err.message, true));
+        .then(async res => {
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.detail || 'Błąd zapisu certyfikatu');
+            }
+            return data;
+        })
+        .then(() => {
+            setStatus('Pomyślnie dodano nowy certyfikat (ważność wyliczona automatycznie)!');
+            document.getElementById('addCertForm').reset();
+            loadCertificates();
+        })
+        .catch(err => setStatus('Błąd: ' + err.message, true));
 }
 
 // --- USUWANIE CERTYFIKATU (DELETE /api/certificates/{id}) ---
@@ -151,18 +161,18 @@ function handleDeleteCertificate(id) {
     fetch(`/api/certificates/${id}`, {
         method: 'DELETE'
     })
-    .then(async res => {
-        const data = await res.json();
-        if (!res.ok) {
-            throw new Error(data.detail || 'Błąd usuwania');
-        }
-        return data;
-    })
-    .then(data => {
-        setStatus(data.message);
-        loadCertificates();
-    })
-    .catch(err => setStatus('Błąd usuwania: ' + err.message, true));
+        .then(async res => {
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.detail || 'Błąd usuwania');
+            }
+            return data;
+        })
+        .then(data => {
+            setStatus(data.message);
+            loadCertificates();
+        })
+        .catch(err => setStatus('Błąd usuwania: ' + err.message, true));
 }
 
 // --- DODAWANIE WYSTAWCY (POST /api/issuers) ---
@@ -181,19 +191,19 @@ function handleAddIssuer(event) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
     })
-    .then(async res => {
-        const data = await res.json();
-        if (!res.ok) {
-            throw new Error(data.detail || 'Błąd zapisu wystawcy');
-        }
-        return data;
-    })
-    .then(() => {
-        setStatus('Pomyślnie dodano nowego wystawcę!');
-        document.getElementById('addIssuerForm').reset();
-        loadIssuers();
-    })
-    .catch(err => setStatus('Błąd: ' + err.message, true));
+        .then(async res => {
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.detail || 'Błąd zapisu wystawcy');
+            }
+            return data;
+        })
+        .then(() => {
+            setStatus('Pomyślnie dodano nowego wystawcę!');
+            document.getElementById('addIssuerForm').reset();
+            loadIssuers();
+        })
+        .catch(err => setStatus('Błąd: ' + err.message, true));
 }
 
 // Inicjalizacja widoku na podstawie adresu hash

@@ -14,20 +14,18 @@
             <div class="header-top">
                 <h1>Monitor Certyfikatów TLS</h1>
             </div>
-            <!-- Nawigacja między dwoma ekranami -->
             <nav>
                 <button id="navCertificates" class="nav-btn active" onclick="switchView('certificates')">
-                    📜 Ekran 1: Certyfikaty
+                    Ekran 1: Certyfikaty
                 </button>
                 <button id="navIssuers" class="nav-btn" onclick="switchView('issuers')">
-                    🏢 Ekran 2: Wystawcy (Issuers)
+                    Ekran 2: Wystawcy
                 </button>
             </nav>
         </header>
 
         <div id="statusMessage" class="status-msg">Ładowanie danych z backendu...</div>
 
-        <!-- ================= EKRAN 1: CERTYFIKATY ================= -->
         <main id="view-certificates" class="view active">
             <h2>Lista monitorowanych certyfikatów</h2>
             <table id="certTable">
@@ -37,7 +35,7 @@
                         <th>Domena</th>
                         <th>Wystawca</th>
                         <th>Ważny do</th>
-                        <th>Status</th>
+                        <th>Ważność (Status)</th>
                         <th>Akcje</th>
                     </tr>
                 </thead>
@@ -45,7 +43,7 @@
             </table>
 
             <div class="card-form">
-                <h3>➕ Dodaj nowy certyfikat</h3>
+                <h3>Dodaj nowy certyfikat</h3>
                 <form id="addCertForm" onsubmit="handleAddCertificate(event)">
                     <div class="form-grid">
                         <div class="form-group">
@@ -62,21 +60,15 @@
                             <label for="certValidUntil">Data wygaśnięcia</label>
                             <input type="date" id="certValidUntil" required>
                         </div>
-                        <div class="form-group">
-                            <label for="certStatus">Status</label>
-                            <select id="certStatus" required>
-                                <option value="valid">valid (Ważny)</option>
-                                <option value="warning">warning (Wkrótce wygasa)</option>
-                                <option value="expired">expired (Wygasł)</option>
-                            </select>
-                        </div>
                     </div>
+                    <p style="color: #94a3b8; font-size: 0.85rem; margin-top: -0.25rem; margin-bottom: 1rem;">
+                        ℹ️ <em>Status ważności (ważny / wkrótce wygasa za &lt; 7 dni / wygasł) wylicza się automatycznie na podstawie daty.</em>
+                    </p>
                     <button type="submit" class="btn-submit">Dodaj certyfikat</button>
                 </form>
             </div>
         </main>
 
-        <!-- ================= EKRAN 2: WYSTAWCY (ISSUERS) ================= -->
         <main id="view-issuers" class="view">
             <h2>Lista urzędów certyfikacji (Wystawców)</h2>
             <p style="color: #94a3b8; font-size: 0.9rem;">
@@ -94,7 +86,7 @@
             </table>
 
             <div class="card-form">
-                <h3>➕ Zarejestruj nowego wystawcę</h3>
+                <h3>Zarejestruj nowego wystawcę</h3>
                 <form id="addIssuerForm" onsubmit="handleAddIssuer(event)">
                     <div class="form-grid">
                         <div class="form-group">
