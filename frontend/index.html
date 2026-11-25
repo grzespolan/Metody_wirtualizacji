@@ -13,6 +13,10 @@
         <header>
             <div class="header-top">
                 <h1>Monitor Certyfikatów TLS</h1>
+                <div class="operator-box">
+                    <label for="operatorName">Operator (Kto):</label>
+                    <input type="text" id="operatorName" value="admin" placeholder="Twoje imię...">
+                </div>
             </div>
             <nav>
                 <button id="navCertificates" class="nav-btn active" onclick="switchView('certificates')">
@@ -21,11 +25,15 @@
                 <button id="navIssuers" class="nav-btn" onclick="switchView('issuers')">
                     Ekran 2: Wystawcy
                 </button>
+                <button id="navHistory" class="nav-btn" onclick="switchView('history')">
+                    Ekran 3: Historia zmian
+                </button>
             </nav>
         </header>
 
         <div id="statusMessage" class="status-msg">Ładowanie danych z backendu...</div>
 
+        <!-- ================= EKRAN 1: CERTYFIKATY ================= -->
         <main id="view-certificates" class="view active">
             <h2>Lista monitorowanych certyfikatów</h2>
             <table id="certTable">
@@ -41,6 +49,34 @@
                 </thead>
                 <tbody id="certList"></tbody>
             </table>
+
+            <!-- Sekcja edycji certyfikatu (widoczna po kliknięciu Edytuj) -->
+            <div id="editCertCard" class="card-form edit-card" style="display: none;">
+                <h3>Edytuj certyfikat (ID: <span id="editCertIdLabel"></span>)</h3>
+                <form id="editCertForm" onsubmit="handleUpdateCertificate(event)">
+                    <input type="hidden" id="editCertId">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="editCertDomain">Domena</label>
+                            <input type="text" id="editCertDomain" required minlength="3">
+                        </div>
+                        <div class="form-group">
+                            <label for="editCertIssuer">Wystawca (Issuer)</label>
+                            <select id="editCertIssuer">
+                                <option value="">-- Brak / Nieznany --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="editCertValidUntil">Data wygaśnięcia</label>
+                            <input type="date" id="editCertValidUntil" required>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-submit">Zapisz zmiany</button>
+                        <button type="button" class="btn-cancel" onclick="cancelEditCertificate()">Anuluj</button>
+                    </div>
+                </form>
+            </div>
 
             <div class="card-form">
                 <h3>Dodaj nowy certyfikat</h3>
@@ -69,6 +105,7 @@
             </div>
         </main>
 
+        <!-- ================= EKRAN 2: WYSTAWCY ================= -->
         <main id="view-issuers" class="view">
             <h2>Lista urzędów certyfikacji (Wystawców)</h2>
             <p style="color: #94a3b8; font-size: 0.9rem;">
@@ -101,6 +138,26 @@
                     <button type="submit" class="btn-submit">Zarejestruj wystawcę</button>
                 </form>
             </div>
+        </main>
+
+        <!-- ================= EKRAN 3: HISTORIA ZMIAN ================= -->
+        <main id="view-history" class="view">
+            <h2>Historia zmian (Audit Log)</h2>
+            <p style="color: #94a3b8; font-size: 0.9rem;">
+                Rejestr operacji dodania, modyfikacji i usunięcia rekordów z tabeli <code>certificate_history</code>.
+            </p>
+            <table id="historyTable">
+                <thead>
+                    <tr>
+                        <th>Data i czas</th>
+                        <th>Akcja</th>
+                        <th>Domena</th>
+                        <th>Kto</th>
+                        <th>Szczegóły</th>
+                    </tr>
+                </thead>
+                <tbody id="historyList"></tbody>
+            </table>
         </main>
     </div>
 

@@ -14,7 +14,7 @@ body {
 
 .container {
     width: 100%;
-    max-width: 900px;
+    max-width: 960px;
     background: #1e293b;
     padding: 2rem;
     border-radius: 12px;
@@ -34,6 +34,30 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.operator-box {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #0f172a;
+    padding: 0.4rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid #334155;
+}
+
+.operator-box label {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    white-space: nowrap;
+}
+
+.operator-box input {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.9rem;
+    width: 140px;
 }
 
 h1 {
@@ -46,6 +70,7 @@ h1 {
 nav {
     display: flex;
     gap: 0.5rem;
+    flex-wrap: wrap;
 }
 
 .nav-btn {
@@ -132,6 +157,11 @@ th {
     color: #f87171;
 }
 
+.badge-updated {
+    background-color: rgba(56, 189, 248, 0.2);
+    color: #38bdf8;
+}
+
 /* Formularze */
 .card-form {
     background: #0f172a;
@@ -139,6 +169,11 @@ th {
     border-radius: 8px;
     border: 1px solid #334155;
     margin-top: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.edit-card {
+    border-color: #38bdf8;
 }
 
 .card-form h3 {
@@ -182,6 +217,11 @@ select:focus {
     border-color: #38bdf8;
 }
 
+.form-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
 .btn-submit {
     background-color: #10b981;
     color: #ffffff;
@@ -196,6 +236,42 @@ select:focus {
 
 .btn-submit:hover {
     background-color: #059669;
+}
+
+.btn-cancel {
+    background-color: #475569;
+    color: #f8fafc;
+    border: none;
+    padding: 0.65rem 1.25rem;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-cancel:hover {
+    background-color: #64748b;
+}
+
+.actions-cell {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.btn-edit {
+    background-color: #0284c7;
+    color: #ffffff;
+    border: none;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-edit:hover {
+    background-color: #0369a1;
 }
 
 .btn-delete {
